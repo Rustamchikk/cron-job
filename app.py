@@ -370,4 +370,4 @@ def cleanup_count():
 # 7. ISHGA TUSHIRISH
 # ============================================
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT'))
+    app.run(debug=True, host='0.0.0.0', port=5000)
