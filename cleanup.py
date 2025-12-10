@@ -67,22 +67,6 @@ def main():
             # deleted_count = User.query.filter(
             #     User.last_active_at < week_ago
             # ).delete()
-            
-            # 4. Tarixga yozish
-            log = CleanupLog(
-                cleanup_time=datetime.utcnow(),
-                records_deleted=deleted_count,
-                status='automatic',
-                details=f"""
-                Avtomatik haftalik tozalash.
-                Jami foydalanuvchilar: {total_users}
-                Faol foydalanuvchilar: {active_users}
-                O'chirilganlar: {deleted_count}
-                """
-            )
-            db.session.add(log)
-            db.session.commit()
-            
             # 5. Natijalarni log qilish
             logger.info(f"✅ MUVAFFAQIYATLI! {deleted_count} ta foydalanuvchi o'chirildi")
             logger.info(f"📝 Log yozuvi qo'shildi (ID: {log.id})")
