@@ -29,9 +29,9 @@ class Config:
     CLEANUP_ENABLED = True
     
     # Ilova sozlamalari
-    DEBUG = os.environ.get('FLASK_DEBUG') == '1'
+    DEBUG = os.environ.get('FLASK_DEBUG')
     HOST = '0.0.0.0'
-    PORT = 5000
+    PORT = os.environ.get('PORT')
     
     # Pagination
     USERS_PER_PAGE = 50

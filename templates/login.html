@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Tizimga Kirish - Yotoqxona Boshqaruvi</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .login-header {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .login-body {
+            padding: 40px;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(90deg, #f72585, #b5179e);
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+        
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #4361ee;
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .btn-login {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .login-footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .admin-info-box {
+            background: #e8f4fd;
+            border-left: 4px solid #4361ee;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .admin-badge {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h2><i class="fas fa-hotel me-2"></i>Yotoqxona Boshqaruvi</h2>
+                        <p class="mb-0">Tizimga kirish</p>
+                    </div>
+                    
+                    <div class="login-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        {% if error %}
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                {{ error }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            <strong>Xavfsizlik cheklovi:</strong> 
+                            {{ max_attempts }} marta noto'g'ri urinish IP manzilingizni {{ block_duration }} daqiqaga bloklaydi
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-4">
+                                <label for="username" class="form-label">Foydalanuvchi nomi</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="username" 
+                                           name="username" 
+                                           placeholder="admin" 
+                                           required
+                                           autofocus>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Parol</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="password" 
+                                           name="password" 
+                                           placeholder="Parol" 
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-login mb-3">
+                                <i class="fas fa-sign-in-alt me-2"></i>Kirish
+                            </button>
+                        </form>
+                        
+                        <!-- Admin ma'lumotlari (.env dan) -->
+                        <div class="admin-info-box">
+                            <h6 class="mb-2"><i class="fas fa-users-cog me-2"></i>Admin foydalanuvchilar:</h6>
+                            <div class="mb-2">
+                                {% if admin_users %}
+                                    {% for admin in admin_users %}
+                                        <span class="admin-badge">{{ admin }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="admin-badge">admin</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-key me-1"></i>
+                                Parollar .env faylida saqlanadi
+                            </small>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-cog me-1"></i>
+                                Sozlamalarni .env faylida o'zgartiring
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="login-footer">
+                        <small>
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Xavfsizlik: {{ max_attempts }} urinish / {{ block_duration }} daqiqa blok
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Formani yuborishda loading holati
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('.btn-login');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Kirilmoqda...';
+            submitBtn.disabled = true;
+        });
+        
+        // Parolni ko'rsatish/yashirish
+        document.getElementById('password').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('form').submit();
+            }
+        });
+    </script>
+</body>
+</html>

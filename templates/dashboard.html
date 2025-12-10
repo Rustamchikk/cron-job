@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏨 Dashboard - Yotoqxona Foydalanuvchilari Boshqaruvi</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏨</text></svg>">
+    
+    <style>
+        /* Inline extra styles */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .login-history-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .login-history-item.success {
+            border-left: 4px solid #28a745;
+        }
+        .login-history-item.failed {
+            border-left: 4px solid #dc3545;
+        }
+        .user-greeting {
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR (YANGILANGAN - LOGIN BILAN) -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow" style="background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-hotel me-2"></i>Yotoqxona Boshqaruvi
+            </a>
+            
+            <div class="navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">
+                                <i class="fas fa-user me-2"></i> Profil: {{ username }}
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">
+                                <i class="fas fa-cog me-2"></i> Sozlamalar
+                            </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                <i class="fas fa-history me-2"></i> Faollik tarixi
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Tizimdan chiqish
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- GREETING MESSAGE -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'danger' }} alert-dismissible fade show">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'times-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="user-greeting">
+            <h5 class="mb-1"><i class="fas fa-user me-2"></i>Xush kelibsiz, {{ username }}!</h5>
+            <p class="mb-0"><small><i class="far fa-clock me-1"></i> {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="container mt-4 fade-in">
+        <!-- STATISTIKA KARTALARI -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body">
+                        <h5><i class="fas fa-users me-2"></i> Jami Foydalanuvchilar</h5>
+                        <h2 id="total-users">{{ total_users }}</h2>
+                        <p class="mb-0"><small>Bazada ro'yxatdan o'tgan</small></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card bg-warning text-white">
+                    <div class="card-body">
+                        <h5><i class="fas fa-broom me-2"></i> So'ngi Tozalash</h5>
+                        <h6 id="last-cleanup">
+                            {% if last_cleanup %}
+                                {{ last_cleanup.cleanup_time.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                Tozalash yo'q
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0">
+                            <small>
+                                {% if last_cleanup %}
+                                    {{ last_cleanup.records_deleted }} ta o'chirildi
+                                {% else %}
+                                    Hali tozalash yo'q
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                        <h5><i class="fas fa-sign-in-alt me-2"></i> Login Tarixi</h5>
+                        <h6 id="login-stats">{{ login_history|length }}</h6>
+                        <p class="mb-0">
+                            <small>
+                                {% set successful = login_history|selectattr('successful')|list|length %}
+                                {{ successful }} ta muvaffaqiyatli
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card bg-danger text-white">
+                    <div class="card-body">
+                        <h5><i class="fas fa-calendar-alt me-2"></i> Tozalashni Boshqarish</h5>
+                        <button id="manual-cleanup" class="btn btn-light w-100 mb-3">
+                            <i class="fas fa-play-circle me-2"></i> HOZIR TOZALASH
+                        </button>
+                        <p class="mb-0">
+                            <small>Keyingi avtomatik tozalash: <br><span id="next-cleanup" class="fw-bold">Dushanba 00:00</span></small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ASOSIY KONTENT -->
+        <div class="row">
+            <!-- FOYDALANUVCHILAR JADVALI -->
+            <div class="col-lg-6">
+                <div class="card users-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-list-alt me-2"></i> Foydalanuvchilar Ro'yxati</span>
+                        <span class="badge bg-light text-dark">{{ users|length }} ta</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if users %}
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table users-table table-hover mb-0">
+                                <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                                    <tr>
+                                        <th width="10%">ID</th>
+                                        <th>Ism</th>
+                                        <th>Xona Raqami</th>
+                                        <th>Qo'shilgan Vaqti</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td><span class="badge bg-secondary">{{ user.id }}</span></td>
+                                        <td class="fw-bold">{{ user.full_name }}</td>
+                                        <td><span class="room-badge">{{ user.room_number }}</span></td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ user.created_at.strftime('%Y-%m-%d') }}<br>
+                                                {{ user.created_at.strftime('%H:%M') }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-user-slash"></i>
+                            <h5>Foydalanuvchilar topilmadi</h5>
+                            <p class="text-muted">Baza bo'sh yoki tozalangan</p>
+                            <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                                <i class="fas fa-sync-alt me-1"></i> Yangilash
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOZALASH TARIXI -->
+            <div class="col-lg-3">
+                <div class="card logs-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-history me-2"></i> Tozalash Tarixi</span>
+                        <span class="badge bg-light text-dark">{{ logs|length }} ta</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="logs-list" style="max-height: 400px; overflow-y: auto;">
+                            {% if logs %}
+                            <div class="list-group list-group-flush">
+                                {% for log in logs %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="log-time">
+                                                <i class="far fa-clock me-1"></i>
+                                                {{ log.cleanup_time.strftime('%m-%d %H:%M') }}
+                                            </div>
+                                            <div class="log-count">
+                                                {{ log.records_deleted }} ta o'chirildi
+                                            </div>
+                                        </div>
+                                        <span class="badge 
+                                            {% if log.status == 'success' or log.status == 'manual' %}bg-success
+                                            {% elif log.status == 'automatic' %}bg-primary
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ log.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <h5>Tarix yo'q</h5>
+                                <p class="text-muted">Tozalash amalga oshirilmagan</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGIN TARIXI -->
+            <div class="col-lg-3">
+                <div class="card logs-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-sign-in-alt me-2"></i> Login Tarixi</span>
+                        <span class="badge bg-light text-dark">{{ login_history|length }} ta</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="logs-list" style="max-height: 400px; overflow-y: auto;">
+                            {% if login_history %}
+                            <div class="list-group list-group-flush">
+                                {% for login in login_history %}
+                                <div class="list-group-item login-history-item {{ 'success' if login.successful else 'failed' }}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="log-time">
+                                                <i class="far fa-clock me-1"></i>
+                                                {{ login.attempt_time.strftime('%H:%M') }}
+                                            </div>
+                                            <div>
+                                                <small>{{ login.username }}</small><br>
+                                                <small class="text-muted">{{ login.ip_address }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge {{ 'bg-success' if login.successful else 'bg-danger' }}">
+                                            {{ 'Muvaffaqiyatli' if login.successful else 'Noto\'g\'ri' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <h5>Login tarixi yo'q</h5>
+                                <p class="text-muted">Hali login qilinmagan</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QO'SHIMCHA STATISTIKA -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 bg-light">
+                    <div class="card-body text-center">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <h4 class="text-primary" id="stats-total">0</h4>
+                                <p class="text-muted mb-0">Jami Foydalanuvchilar</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="text-success" id="stats-active">0</h4>
+                                <p class="text-muted mb-0">Oxirgi 7 kunda faol</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="text-danger" id="stats-inactive">0</h4>
+                                <p class="text-muted mb-0">Faol bo'lmagan</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="text-warning" id="stats-cleanups">0</h4>
+                                <p class="text-muted mb-0">Tozalashlar soni</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER (YANGILANGAN) -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 text-start">
+                    <i class="fas fa-user me-1"></i> {{ username }}
+                    <a href="{{ url_for('logout') }}" class="text-white ms-3">
+                        <i class="fas fa-sign-out-alt me-1"></i>Chiqish
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-sync-alt me-1"></i> Har dushanba 00:00 da avtomatik tozalanadi
+                </div>
+                <div class="col-md-4 text-end">
+                    <i class="fas fa-shield-alt me-1"></i> 3 marta noto'g'ri urinish = 3 daqiqa blok
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // Vaqtni yangilash
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toISOString().slice(0, 19).replace('T', ' ');
+            document.getElementById('current-time').textContent = timeStr;
+        }
+        setInterval(updateTime, 1000);
+
+        // Statistika yuklash
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error('Server xatosi');
+                
+                const data = await response.json();
+                
+                // Yangilash
+                document.getElementById('total-users').textContent = data.total_users;
+                document.getElementById('stats-total').textContent = data.total_users;
+                document.getElementById('stats-active').textContent = data.active_users || 0;
+                document.getElementById('stats-inactive').textContent = data.inactive_users || 0;
+                
+                // Tozalashlar soni
+                const logsResponse = await fetch('/api/cleanup/count');
+                if (logsResponse.ok) {
+                    const logsData = await logsResponse.json();
+                    document.getElementById('stats-cleanups').textContent = logsData.count || 0;
+                }
+                
+                if (data.last_cleanup && data.last_cleanup !== 'Hech qachon') {
+                    document.getElementById('last-cleanup').innerHTML = 
+                        `<h6>${data.last_cleanup}</h6>
+                         <p class="mb-0"><small>${data.records_deleted_last} ta yozuv tozalandi</small></p>`;
+                }
+                
+            } catch (error) {
+                console.error('Statistika yuklashda xatolik:', error);
+            }
+        }
+
+        // Qo'lda tozalash
+        document.getElementById('manual-cleanup').addEventListener('click', async function() {
+            const result = await Swal.fire({
+                title: 'Tozalashni boshlaymizmi?',
+                html: `<div class="text-start">
+                          <p><strong>Diqqat!</strong> Bu amal:</p>
+                          <ul>
+                            <li>Barcha foydalanuvchilarni o'chirib tashlaydi</li>
+                            <li>Ortga qaytarib bo'lmaydi</li>
+                            <li>Tozalash tarixiga yoziladi</li>
+                          </ul>
+                          <p class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Admin: <strong>${document.querySelector('.navbar-brand + .navbar-collapse .nav-link').textContent.trim()}</strong></p>
+                       </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f72585',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ha, tozalash',
+                cancelButtonText: 'Bekor qilish',
+                reverseButtons: true
+            });
+            
+            if (!result.isConfirmed) return;
+            
+            // Tugmani bloklash
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Tozalanmoqda...';
+            
+            try {
+                const response = await fetch('/api/cleanup/manual', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    await Swal.fire({
+                        title: 'Muvaffaqiyatli!',
+                        text: result.message,
+                        icon: 'success',
+                        confirmButtonColor: '#4361ee'
+                    });
+                    
+                    // Sahifani yangilash
+                    location.reload();
+                } else {
+                    throw new Error(result.message);
+                }
+                
+            } catch (error) {
+                await Swal.fire({
+                    title: 'Xatolik!',
+                    text: error.message || 'Noma\'lum xatolik yuz berdi',
+                    icon: 'error',
+                    confirmButtonColor: '#dc3545'
+                });
+                
+                // Tugmani qayta faollashtirish
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-play-circle me-2"></i> HOZIR TOZALASH';
+            }
+        });
+
+        // Keyingi tozalash vaqtini hisoblash
+        function calculateNextCleanup() {
+            const now = new Date();
+            const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+            const nextMonday = new Date(now);
+            nextMonday.setDate(now.getDate() + daysUntilMonday);
+            nextMonday.setHours(0, 0, 0, 0);
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const nextCleanupEl = document.getElementById('next-cleanup');
+            if (nextCleanupEl) {
+                nextCleanupEl.textContent = nextMonday.toLocaleDateString('uz-UZ', options) + ' 00:00';
+            }
+        }
+
+        // Sahifa yuklanganda
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            loadStats();
+            calculateNextCleanup();
+            
+            // Har 30 soniyada statistika yangilash
+            setInterval(loadStats, 30000);
+            
+            // Auto logout after 30 minutes
+            setTimeout(() => {
+                Swal.fire({
+                    title: 'Sessiya muddati tugadi',
+                    text: 'Xavfsizlik uchun siz avtomatik ravishda tizimdan chiqarildingiz.',
+                    icon: 'info',
+                    confirmButtonText: 'Yana kirish'
+                }).then(() => {
+                    window.location.href = '/logout';
+                });
+            }, 30 * 60 * 1000); // 30 minutes
+        });
+    </script>
+</body>
+</html>
