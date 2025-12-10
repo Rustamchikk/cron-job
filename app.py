@@ -195,7 +195,7 @@ def login():
                     ).count()
                     
                     remaining_attempts = MAX_LOGIN_ATTEMPTS - failed_count
-                    error = f"Noto'g'ri login yoki parol! {remaining_attempts} ta urinish qoldi."
+                    error = f"Noto'g'ri login yoki parol!"
     
     admin_credentials = get_admin_credentials()
     admin_users = list(admin_credentials.keys())

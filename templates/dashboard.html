@@ -139,22 +139,6 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-3">
-                <div class="card stat-card bg-success text-white">
-                    <div class="card-body">
-                        <h5><i class="fas fa-sign-in-alt me-2"></i> Login Tarixi</h5>
-                        <h6 id="login-stats">{{ login_history|length }}</h6>
-                        <p class="mb-0">
-                            <small>
-                                {% set successful = login_history|selectattr('successful')|list|length %}
-                                {{ successful }} ta muvaffaqiyatli
-                            </small>
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
             <div class="col-md-3">
                 <div class="card stat-card bg-danger text-white">
                     <div class="card-body">
@@ -266,51 +250,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- LOGIN TARIXI -->
-            <div class="col-lg-3">
-                <div class="card logs-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-sign-in-alt me-2"></i> Login Tarixi</span>
-                        <span class="badge bg-light text-dark">{{ login_history|length }} ta</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="logs-list" style="max-height: 400px; overflow-y: auto;">
-                            {% if login_history %}
-                            <div class="list-group list-group-flush">
-                                {% for login in login_history %}
-                                <div class="list-group-item login-history-item {{ 'success' if login.successful else 'failed' }}">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="log-time">
-                                                <i class="far fa-clock me-1"></i>
-                                                {{ login.attempt_time.strftime('%H:%M') }}
-                                            </div>
-                                            <div>
-                                                <small>{{ login.username }}</small><br>
-                                                <small class="text-muted">{{ login.ip_address }}</small>
-                                            </div>
-                                        </div>
-                                        <span class="badge {{ 'bg-success' if login.successful else 'bg-danger' }}">
-                                            {{ 'Muvaffaqiyatli' if login.successful else 'Noto\'g\'ri' }}
-                                        </span>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="empty-state">
-                                <i class="fas fa-sign-in-alt"></i>
-                                <h5>Login tarixi yo'q</h5>
-                                <p class="text-muted">Hali login qilinmagan</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- QO'SHIMCHA STATISTIKA -->
         <div class="row mt-4">
             <div class="col-12">
@@ -352,9 +291,6 @@
                 </div>
                 <div class="col-md-4 text-center">
                     <i class="fas fa-sync-alt me-1"></i> Har dushanba 00:00 da avtomatik tozalanadi
-                </div>
-                <div class="col-md-4 text-end">
-                    <i class="fas fa-shield-alt me-1"></i> 3 marta noto'g'ri urinish = 3 daqiqa blok
                 </div>
             </div>
         </div>
