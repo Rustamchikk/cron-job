@@ -31,7 +31,7 @@ class Config:
     # Ilova sozlamalari
     DEBUG = os.environ.get('FLASK_DEBUG')
     HOST = '0.0.0.0'
-    PORT = os.environ.get('PORT')
+    PORT = 5000
     
     # Pagination
     USERS_PER_PAGE = 50
